@@ -256,6 +256,53 @@ async def adminwordbanbypass(ctx, enableBypass):
 async def clear(ctx, amount=10):
     amount += 1
     await ctx.channel.purge(limit=amount)
+    
+#FUNCTION:    banlist()
+#ARGUEMENTS:  Discord.context ctx
+#RETURNS:     Nothing
+#DESCRIPTION: Gets a list of all users banned from the channel.
+@bot.command()
+@commands.has_permissions(ban_members=True)
+async def banlist(ctx):
+    banList = await ctx.guild.bans()
+    banString = ""
+    count = 0
+
+    if len(banList) > 0:
+        for ban in banList:
+            count += 1
+            banString += f"[{count}: {ban[1].name} | {ban[1].id} |  {ban[0]}]\n"
+
+        await ctx.send(f"```css\nSERVER BANS (NUMBER, USERNAME, USER ID, BAN REASON):\n\n{banString}\n```")
+    else:
+        await ctx.send("There are no users currently banned from this server")
+
+#FUNCTION:    ban()
+#ARGUEMENTS:  Discord.context ctx, Discord.Member member, String Reason
+#RETURNS:     Nothing
+#DESCRIPTION: Bans a user from the server.
+@bot.command()
+@commands.has_permissions(ban_members=True)
+async def ban(ctx, member : discord.Member, *, reason=None):
+    await member.ban(reason=reason)
+
+#FUNCTION:    unban()
+#ARGUEMENTS:  Discord.context ctx, Discord.Member member
+#RETURNS:     Nothing
+#DESCRIPTION: Unbans a user from the server.
+@bot.command()
+@commands.has_permissions(ban_members=True)
+async def unban(ctx, *, member):
+    bannedUsers = await ctx.guild.bans()
+    name, discriminator = member.split("#")
+
+    for ban in bannedUsers:
+        user = ban.user
+
+        if (user.name, user.discriminator) == (name, discriminator):
+            await ctx.guild.unban(user)
+            await ctx.send(f"Unbanned {user.mention}")
+            return
 
 if token != "":
     bot.run(token)
