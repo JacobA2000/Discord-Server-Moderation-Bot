@@ -270,10 +270,13 @@ async def banlist(ctx):
 
     if len(banList) > 0:
         for ban in banList:
-            count += 1
-            banString += f"[{count}: {ban[1].name} | {ban[1].id} |  {ban[0]}]\n"
+            user = ban.user
+            reason = ban.reason
 
-        await ctx.send(f"```css\nSERVER BANS (NUMBER, USERNAME, USER ID, BAN REASON):\n\n{banString}\n```")
+            count += 1
+            banString += f"[{count}: {user.name} | #{user.discriminator} | {user.id} |  {reason}]\n"
+
+        await ctx.send(f"```css\nSERVER BANS (NUMBER, USERNAME, USER DISCRIMINATOR, USER ID, BAN REASON):\n\n{banString}\n```")
     else:
         await ctx.send("There are no users currently banned from this server")
 
@@ -285,6 +288,7 @@ async def banlist(ctx):
 @commands.has_permissions(ban_members=True)
 async def ban(ctx, member : discord.Member, *, reason=None):
     await member.ban(reason=reason)
+    await ctx.send(f"Banned player {member.mention}")
 
 #FUNCTION:    unban()
 #ARGUEMENTS:  Discord.context ctx, Discord.Member member
@@ -303,6 +307,16 @@ async def unban(ctx, *, member):
             await ctx.guild.unban(user)
             await ctx.send(f"Unbanned {user.mention}")
             return
+
+#FUNCTION:    kick()
+#ARGUEMENTS:  Discord.context ctx, Discord.Member member, String Reason
+#RETURNS:     Nothing
+#DESCRIPTION: Kicks a user from the server.
+@bot.command()
+@commands.has_permissions(kick_members=True)
+async def kick(ctx, member : discord.Member, *, reason=None):
+    await member.kick(reason=reason)
+    await ctx.send(f"Kicked player {member.mention}")
 
 if token != "":
     bot.run(token)
