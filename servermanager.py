@@ -57,10 +57,12 @@ async def on_ready():
 @bot.event
 async def on_message(message):
     messageAuthor = message.author
-    authorIsAdmin = messageAuthor.guild_permissions.administrator
 
     #Profanity filter
-    if bannedWords != None:
+    if bannedWords != None and (isinstance(message.channel, discord.channel.DMChannel) == False):
+
+        authorIsAdmin = messageAuthor.guild_permissions.administrator
+
         if adminBannedWordBypass == False or authorIsAdmin == False:
             for bannedWord in bannedWords:
                 if msg_contains_word(message.content.lower(), bannedWord):
@@ -75,7 +77,7 @@ async def on_message(message):
 #RETURNS:     Nothing
 #DESCRIPTION: Retrieves info about the current server and 
 #             sends it back as an embed message.
-@bot.command()
+@bot.command(description="Retrieves info about the current server and sends it back as an embed message.")
 async def serverinfo(ctx):
     server = ctx.guild
     numVoiceChannels = len(server.voice_channels)
@@ -126,7 +128,7 @@ async def serverinfo(ctx):
 #RETURNS:     Nothing
 #DESCRIPTION: Retrieves info about the command author or specified user in the current server and 
 #             sends it back as an embed message.
-@bot.command()
+@bot.command(description="Retrieves info about the command author or specified user in the current server and sends it back as an embed message.", help="name = the name of the user you wish to search for.")
 async def userinfo(ctx, name=""):
     #If an arguement for name is passed search for that user.
     if name != "":
@@ -169,7 +171,7 @@ async def userinfo(ctx, name=""):
 #ARGUEMENTS:  Discord.context ctx, String wordToAdd
 #RETURNS:     Nothing
 #DESCRIPTION: Adds a new word to the bannedWords list and the config.json file.     
-@bot.command()
+@bot.command(description="Adds a new word to the bannedWords list and the config.json file. ", help="wordToAdd = the word you wish to ban. \n**REQUIRES ADMINISTRATOR PERMISSIONS**.")
 @commands.has_permissions(administrator=True)
 async def addbannedword(ctx, wordToAdd):
     #Check if the word is already banned
@@ -195,7 +197,7 @@ async def addbannedword(ctx, wordToAdd):
 #ARGUEMENTS:  Discord.context ctx, String wordToRemove
 #RETURNS:     Nothing
 #DESCRIPTION: Remove a word from the bannedWords list and the config.json file.     
-@bot.command()
+@bot.command(description="Remove a word from the bannedWords list and the config.json file.", help="wordToRemove = the word you wish to unban. \n**REQUIRES ADMINISTRATOR PERMISSIONS**.")
 @commands.has_permissions(administrator=True)
 async def removebannedword(ctx, wordToRemove):
     #Check if the word is in the bannedWords list
@@ -221,7 +223,7 @@ async def removebannedword(ctx, wordToRemove):
 #ARGUEMENTS:  Discord.context ctx, String enableBypass
 #RETURNS:     Nothing
 #DESCRIPTION: Changes whether or not admins are allowed to use banned words.     
-@bot.command()
+@bot.command(description="Changes whether or not admins are allowed to use banned words.", help="enableBypass(required) = True/False. \n**REQUIRES ADMINISTRATOR PERMISSIONS**.")
 @commands.has_permissions(administrator=True)
 async def adminwordbanbypass(ctx, enableBypass):
     bypassBool = None
@@ -247,11 +249,11 @@ async def adminwordbanbypass(ctx, enableBypass):
                 f.write(json.dumps(data))
                 f.truncate()
 
-#FUNCTION:    removebannedword()
+#FUNCTION:    clear()
 #ARGUEMENTS:  Discord.context ctx, Int amount
 #RETURNS:     Nothing
 #DESCRIPTION: Clears X amount of messages from the current channel, where X = the amount parameter.     
-@bot.command()
+@bot.command(description="Clears X amount of messages from the current channel, where X = the amount parameter.", help="amount(optional) = integer of how many messages you wish to delete. If not specified 10 will be deleted. \n**REQUIRES MANAGE MESSAGES PERMISSIONS**")
 @commands.has_permissions(manage_messages=True)
 async def clear(ctx, amount=10):
     amount += 1
@@ -261,7 +263,7 @@ async def clear(ctx, amount=10):
 #ARGUEMENTS:  Discord.context ctx
 #RETURNS:     Nothing
 #DESCRIPTION: Gets a list of all users banned from the channel.
-@bot.command()
+@bot.command(description="Gets a list of all users banned from the channel.", help="\n**REQUIRES BAN MEMEBERS PERMISSIONS**.")
 @commands.has_permissions(ban_members=True)
 async def banlist(ctx):
     banList = await ctx.guild.bans()
@@ -284,7 +286,7 @@ async def banlist(ctx):
 #ARGUEMENTS:  Discord.context ctx, Discord.Member member, String Reason
 #RETURNS:     Nothing
 #DESCRIPTION: Bans a user from the server.
-@bot.command()
+@bot.command(description="Bans a user from the server.", help="member(required) = A discord members mention e.g. @member, reason(optional) = A string containing a reason for the ban. \n**REQUIRES BAN MEMEBERS PERMISSIONS**.")
 @commands.has_permissions(ban_members=True)
 async def ban(ctx, member : discord.Member, *, reason=None):
     await member.ban(reason=reason)
@@ -294,7 +296,7 @@ async def ban(ctx, member : discord.Member, *, reason=None):
 #ARGUEMENTS:  Discord.context ctx, Discord.Member member
 #RETURNS:     Nothing
 #DESCRIPTION: Unbans a user from the server.
-@bot.command()
+@bot.command(description="Unbans a user from the server.", help="member(required) = A discord member e.g. user#1224. \n**REQUIRES BAN MEMBERS PERMISSIONS**.")
 @commands.has_permissions(ban_members=True)
 async def unban(ctx, *, member):
     bannedUsers = await ctx.guild.bans()
@@ -312,11 +314,39 @@ async def unban(ctx, *, member):
 #ARGUEMENTS:  Discord.context ctx, Discord.Member member, String Reason
 #RETURNS:     Nothing
 #DESCRIPTION: Kicks a user from the server.
-@bot.command()
+@bot.command(description="Kicks a user from the server.", help="member(required) = A discord members mention e.g. @member, reason(optional) = A string containing a reason for the kick. \n**REQUIRES KICK MEMBERS PERMISSIONS**.")
 @commands.has_permissions(kick_members=True)
 async def kick(ctx, member : discord.Member, *, reason=None):
     await member.kick(reason=reason)
     await ctx.send(f"Kicked player {member.mention}")
+
+#FUNCTION:    help()
+#ARGUEMENTS:  Discord.context ctx
+#RETURNS:     Nothing
+#DESCRIPTION: Sends the author command help based on the command they can access.
+@bot.command(description="Displays this menu")
+async def help(ctx):
+    embed=discord.Embed(title="COMMAND HELP", description="Here is a list of commands and their parameters:", colour=ctx.author.colour)
+
+    #Loop through each command
+    for command in bot.commands: 
+        paramString = ""
+        #Loop through the parameters of the command
+        for param in command.clean_params:
+            paramString += f"{param} "
+
+        #Check if the user can run the command
+        try:
+            commandCanRun = await command.can_run(ctx)
+        except discord.ext.commands.errors.MissingPermissions:
+            commandCanRun = False
+
+        if commandCanRun == True:
+            #If the user can run the command add it to their help embed           
+            embed.add_field(name=f"**{prefix}{command} {paramString}**", value=f"**Description**: {command.description}\n\n**Help**: {command.help}", inline=True)    
+
+    await ctx.author.send(embed=embed)
+
 
 if token != "":
     bot.run(token)
